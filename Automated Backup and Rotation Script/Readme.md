@@ -9,57 +9,25 @@ Configure an **AWS Backup Plan** to automatically back up an EC2 instance and re
 ## 🏗️ Architecture Overview
 
 ```mermaid
-graph TD
-    %% External Actors
-    Dev["Developer / Operator <br/> (Tanmay)"]
-    User["End User / Admin"]
+graph LR
+    Dev["👨‍💻 Developer (Tanmay)"]
 
-    %% AWS Cloud
-    subgraph "AWS Cloud — Account: 031871828038"
-
-        %% Source Region
-        subgraph "Source Region: ap-south-1 (Mumbai)"
-            EC2["EC2 Instance <br/> Project-1 <br/> i-01c1e4d02f7021b86"]
-
-            subgraph "Backup Plan: Cross-Region-Backup"
-                Rule["Backup Rule <br/> EC2-backup-rule <br/> Frequency: Daily | Retention: 1 Week"]
-            end
-
-            SrcVault[("Backup Vault <br/> EC2-Backup <br/> ap-south-1")]
-            SrcRP["Recovery Point <br/> ami-017f1cc752da052d0 <br/> ✅ Completed"]
-        end
-
-        %% Destination Region
-        subgraph "Destination Region: ap-southeast-1 (Singapore)"
-            DstVault[("Backup Vault <br/> copy-EC2-Backup <br/> ap-southeast-1")]
-            DstRP["Recovery Point <br/> ami-0bad8d70b6ff57122 <br/> ✅ Replicated"]
-        end
-
-        %% KMS Encryption
-        KMS["AWS KMS <br/> Encryption Keys"]
+    subgraph SRC["☁️ ap-south-1 · Mumbai (Source)"]
+        EC2["🖥️ EC2: Project-1"]
+        Rule["📋 Backup Rule: EC2-backup-rule\nDaily · 1 Week Retention"]
+        SrcVault[("🗄️ Vault: EC2-Backup")]
     end
 
-    %% Operator configures the backup plan
-    Dev -->|"Configures Backup Plan <br/> & Assigns EC2 Resource"| Rule
+    subgraph DST["☁️ ap-southeast-1 · Singapore (Destination)"]
+        DstVault[("🗄️ Vault: copy-EC2-Backup")]
+        DstRP["✅ Recovery Point\nami-0bad8d70b6ff57122"]
+    end
 
-    %% EC2 is the protected resource
-    EC2 -->|"Protected Resource"| Rule
-
-    %% Backup rule writes to source vault
-    Rule -->|"1. On-Demand / Scheduled Backup"| SrcVault
-    SrcVault -->|"Stores"| SrcRP
-
-    %% Cross-region replication
-    SrcVault -->|"2. Cross-Region Copy <br/> (Automatic Replication)"| DstVault
-    DstVault -->|"Stores"| DstRP
-
-    %% KMS encrypts both vaults
-    KMS -.->|"Encrypts"| SrcVault
-    KMS -.->|"Encrypts"| DstVault
-
-    %% Operator validates jobs
-    Dev -->|"Monitors Backup Jobs <br/> & Copy Jobs"| User
-    User -->|"Verifies Recovery Points <br/> in Both Regions"| DstRP
+    Dev -->|"Configures"| Rule
+    EC2 -->|"Protected by"| Rule
+    Rule -->|"1. Backup"| SrcVault
+    SrcVault -->|"2. Cross-Region Copy"| DstVault
+    DstVault --> DstRP
 ```
 
 ---
@@ -136,42 +104,42 @@ graph TD
 ### 1. Backup Job — Completed (Source Region: Mumbai)
 > Shows the on-demand backup job for EC2 instance `Project-1` completing successfully.
 
-![Backup Job Completed](ss1.png)
+![Backup Job Completed](./Screenshot%202026-08-11%20121310.png)
 
 ---
 
 ### 2. Source Backup Vault — `EC2-Backup` (Mumbai, ap-south-1)
 > Source vault with 1 recovery point for the EC2 instance.
 
-![Source Vault EC2-Backup](ss2.png)
+![Source Vault EC2-Backup](./Screenshot%202026-08-11%20121344.png)
 
 ---
 
 ### 3. Destination Backup Vault — `copy-EC2-Backup` (Singapore, ap-southeast-1)
 > Replicated recovery point visible in the destination region's vault, confirming successful cross-region replication.
 
-![Destination Vault copy-EC2-Backup](ss3.png)
+![Destination Vault copy-EC2-Backup](./Screenshot%202026-08-11%20122342.png)
 
 ---
 
 ### 4. Backup Plan Rule Configuration — `EC2-backup-rule`
 > Shows the backup rule with daily frequency and the `EC2-Backup` vault selected.
 
-![Backup Rule Configuration](ss4.png)
+![Backup Rule Configuration](./Screenshot%202026-08-12%20114614.png)
 
 ---
 
 ### 5. Cross-Region Copy Settings
 > Destination region set to Singapore, vault `EC2-backup-copy`, lifecycle inherited from the main backup rule.
 
-![Cross-Region Copy Settings](ss5.png)
+![Cross-Region Copy Settings](./Screenshot%202026-08-12%20114625.png)
 
 ---
 
 ### 6. Copy Job — Completed (Cross-Region Replication)
 > Copy job for `Project-1` completed successfully, confirming the backup was replicated to Singapore.
 
-![Copy Job Completed](ss6.png)
+![Copy Job Completed](./Screenshot%202026-08-13%20103846.png)
 
 ---
 
